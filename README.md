@@ -2,7 +2,7 @@
 
 **A free, no-signup, no-watermark resume and cover letter builder.**
 
-Built for students and job seekers in Nepal and South Asia — where most good tools are paywalled or require an account just to download your own resume.
+Built for students and job seekers around the world.
 
 🔗 **Live site:** [ilovecv.vercel.app](https://ilovecv.vercel.app)
 
@@ -69,26 +69,11 @@ cd ilovecv
 
 ---
 
-## Screenshots
-
-> Add screenshots here after deploying
-
----
-
-## Roadmap
-
-- [ ] More templates
-- [ ] Nepali language support
-- [ ] More subjects for LearnFree integration
-- [ ] Mobile-optimized layout
-
----
-
 ## Support
 
 If I Love CV helped you land a job or saved you time, consider supporting via eSewa:
 
-**eSewa:** `98XXXXXXXX` ← replace with your number
+**eSewa:** `9823418816`
 
 ---
 
