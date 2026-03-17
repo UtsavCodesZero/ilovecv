@@ -766,6 +766,7 @@ body {
       <button class="stab" onclick="showSection('skills', this)">Skills</button>
       <button class="stab" onclick="showSection('projects', this)">Projects</button>
       <button class="stab" onclick="showSection('cover', this)">Cover Letter</button>
+      <button class="stab" onclick="showSection('ats', this)">ATS Score</button>
     </div>
     <div class="form-body">
 
@@ -885,9 +886,37 @@ body {
         </div>
       </div>
 
+      <!-- ATS SCORE -->
+      <div class="form-section" id="sec-ats">
+        <div style="margin-bottom:16px;">
+          <label class="field-label">Paste Job Description</label>
+          <textarea class="field-textarea" id="ats-jd" rows="8" placeholder="Paste the job description here and we'll check how well your resume matches it..." style="min-height:160px;"></textarea>
+        </div>
+        <button class="add-btn" style="border-style:solid;border-color:var(--accent2);color:var(--accent);" onclick="runATS()">Analyse my resume →</button>
+        <div id="ats-result" style="margin-top:20px;display:none;">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+            <div id="ats-score-circle" style="width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;border:3px solid #8b6fff;background:rgba(139,111,255,0.1);flex-shrink:0;">
+              <span id="ats-score-num" style="font-family:'Syne',sans-serif;font-size:24px;font-weight:700;color:var(--text);"></span>
+              <span style="font-size:10px;color:var(--text3);">/ 100</span>
+            </div>
+            <div>
+              <div id="ats-score-label" style="font-size:15px;font-weight:500;color:var(--text);margin-bottom:4px;"></div>
+              <div id="ats-score-sub" style="font-size:12px;color:var(--text2);line-height:1.6;"></div>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <div class="field-label" style="margin-bottom:8px;">Keywords found in your resume</div>
+            <div id="ats-found" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+          </div>
+          <div>
+            <div class="field-label" style="margin-bottom:8px;">Missing keywords</div>
+            <div id="ats-missing" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-
   <!-- PREVIEW PANEL -->
   <div class="preview-panel">
     <div class="resume-paper" id="resume-paper">
@@ -993,6 +1022,7 @@ function renderExpList() {
     <div class="repeat-item">
       <div class="repeat-item-header">
         <span class="repeat-item-title">Experience ${i+1}</span>
+        <button class="remove-btn" style="font-size:13px;padding:2px 8px;margin-right:4px;" onclick="dupExp(${e.id})" title="Duplicate">⧉</button>
         <button class="remove-btn" onclick="removeExp(${e.id})">×</button>
       </div>
       <div class="field-group"><label class="field-label">Company</label>
@@ -1004,6 +1034,22 @@ function renderExpList() {
       <div class="field-group"><label class="field-label">Description</label>
         <textarea class="field-textarea" placeholder="Describe your responsibilities and achievements..." oninput="state.experience[${i}].desc=this.value;render();saveState()">${esc(e.desc)}</textarea></div>
     </div>`).join('');
+}
+  function dupExp(id) {
+  const orig = state.experience.find(e => e.id === id);
+  if (!orig) return;
+  const copy = Object.assign({}, orig, { id: Date.now() + Math.random() });
+  const idx = state.experience.findIndex(e => e.id === id);
+  state.experience.splice(idx + 1, 0, copy);
+  renderExpList(); render(); saveState();
+}
+function dupEdu(id) {
+  const orig = state.education.find(e => e.id === id);
+  if (!orig) return;
+  const copy = Object.assign({}, orig, { id: Date.now() + Math.random() });
+  const idx = state.education.findIndex(e => e.id === id);
+  state.education.splice(idx + 1, 0, copy);
+  renderEduList(); render(); saveState();
 }
 
 // ── EDUCATION ──
@@ -1026,6 +1072,7 @@ function renderEduList() {
     <div class="repeat-item">
       <div class="repeat-item-header">
         <span class="repeat-item-title">Education ${i+1}</span>
+        <button class="remove-btn" style="font-size:13px;padding:2px 8px;margin-right:4px;" onclick="dupEdu(${e.id})" title="Duplicate">⧉</button>
         <button class="remove-btn" onclick="removeEdu(${e.id})">×</button>
       </div>
       <div class="field-group"><label class="field-label">Institution</label>
@@ -1504,7 +1551,78 @@ async function downloadResumeDocx() {
     URL.revokeObjectURL(url);
 }
 
+// ── ATS SCORE ──
+function runATS() {
+  const jd = document.getElementById('ats-jd').value.toLowerCase().trim();
+  if (!jd) { alert('Please paste a job description first.'); return; }
 
+  const s = state;
+  const resumeText = [
+    s.name, s.title, s.summary,
+    ...s.experience.map(e => e.role + ' ' + e.company + ' ' + e.desc),
+    ...s.education.map(e => e.degree + ' ' + e.institution),
+    ...s.skills.map(sk => sk.name),
+    ...s.projects.map(p => p.name + ' ' + p.desc)
+  ].join(' ').toLowerCase();
+
+  // Extract meaningful words from JD (ignore short/common words)
+  const stopWords = new Set(['the','and','or','a','an','in','on','at','to','for','of','with','is','are','be','will','we','you','our','your','this','that','have','has','can','as','from','by','it','its','they','their','all','not','but','was','were','been','would','should','could','who','which','what','when','how','more','also','any','other','into','than','about','up','do','did','if','so','no','my','we','he','she','him','her','his','them','us','me','these','those','such','each','both','either']);
+
+  const jdWords = [...new Set(
+    jd.match(/\b[a-z][a-z0-9+#.\-]{1,30}\b/g) || []
+  )].filter(w => !stopWords.has(w) && w.length > 2);
+
+  // Score keywords
+  const found = [];
+  const missing = [];
+  jdWords.forEach(word => {
+    if (resumeText.includes(word)) found.push(word);
+    else missing.push(word);
+  });
+
+  const total = jdWords.length || 1;
+  const pct = Math.round((found.length / total) * 100);
+
+  // Bonus points for key sections filled
+  let bonus = 0;
+  if (s.summary) bonus += 5;
+  if (s.experience.length) bonus += 5;
+  if (s.skills.length >= 3) bonus += 5;
+  const score = Math.min(100, pct + bonus);
+
+  // Label
+  let label, sub, color;
+  if (score >= 75) {
+    label = 'Strong match'; color = '#6dffa0';
+    sub = 'Your resume aligns well with this job description. Good chance of passing ATS filters.';
+  } else if (score >= 50) {
+    label = 'Moderate match'; color = '#f7c948';
+    sub = 'Decent match but room to improve. Try adding the missing keywords naturally into your resume.';
+  } else if (score >= 25) {
+    label = 'Weak match'; color = '#f09433';
+    sub = 'Your resume is missing several key terms. Tailor it more closely to this job description.';
+  } else {
+    label = 'Poor match'; color = '#ff6b6b';
+    sub = 'Very few keywords match. Consider rewriting your summary and experience to reflect this role.';
+  }
+
+  // Render results
+  document.getElementById('ats-result').style.display = 'block';
+  document.getElementById('ats-score-num').textContent = score;
+  document.getElementById('ats-score-circle').style.borderColor = color;
+  document.getElementById('ats-score-circle').style.background = color + '18';
+  document.getElementById('ats-score-label').textContent = label;
+  document.getElementById('ats-score-label').style.color = color;
+  document.getElementById('ats-score-sub').textContent = sub;
+
+  document.getElementById('ats-found').innerHTML = found.slice(0, 30).map(w =>
+    `<span style="font-size:11px;padding:3px 10px;border-radius:100px;background:rgba(109,255,160,0.1);border:1px solid rgba(109,255,160,0.3);color:#6dffa0;">${w}</span>`
+  ).join('') || '<span style="font-size:12px;color:var(--text3);">None found</span>';
+
+  document.getElementById('ats-missing').innerHTML = missing.slice(0, 30).map(w =>
+    `<span style="font-size:11px;padding:3px 10px;border-radius:100px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;">${w}</span>`
+  ).join('') || '<span style="font-size:12px;color:var(--text3);">None — great job!</span>';
+}
 
 // ── PHOTO HANDLING ──
 function handlePhoto(input) {
