@@ -1,6 +1,6 @@
 # I Love CV 📄
 
-**A free, no-signup, no-watermark resume and cover letter builder.**
+**A free, no-signup, no-watermark resume and cover letter builder with ATS score checking.**
 
 Built for students and job seekers around the world.
 
@@ -11,6 +11,8 @@ Built for students and job seekers around the world.
 ## Features
 
 - **5 professional templates** — Classic, Modern, Elegant, Minimal, Bold
+- - **ATS score checker** — paste a job description and instantly see how well your resume matches it, which keywords are found, and which are missing
+- **Duplicate sections** — copy an existing experience or education entry in one click
 - **Cover letter maker** — live preview with PDF and DOCX export
 - **Skill proficiency bars** — set your own level per skill (Modern template)
 - **Profile photo** — optional, stored locally in your browser
